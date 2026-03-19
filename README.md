@@ -24,6 +24,27 @@ It needs:
 
 For deployment, use a server or container host such as a VPS, Docker host, Render, Railway, Fly.io, or another platform that supports long-running Node apps and browser automation.
 
+## Recommended web deployment: Railway
+
+This repository is prepared for Railway deployment.
+
+### Railway deploy steps
+
+1. Push this repo to GitHub.
+2. In Railway, create a new project from the GitHub repo.
+3. Railway will detect the included `Dockerfile` automatically.
+4. Add a persistent volume mounted to `/app/data`.
+5. Generate a public domain for the service.
+6. Open the deployed site, click `ChatGPT 세션 시작`, and log in inside the Playwright-opened browser session.
+
+### Recommended Railway settings
+
+- Volume mount path: `/app/data`
+- Health check path: `/api/health`
+- Port: use Railway's injected `PORT`
+
+Without a persistent volume, the ChatGPT session and cut data may be lost after restarts or redeploys.
+
 ## Local run
 
 ```powershell

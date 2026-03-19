@@ -470,6 +470,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && requestUrl.pathname === "/api/health") {
+      sendJson(res, 200, {
+        ok: true,
+        service: "prompt-bridge",
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
     if (req.method === "POST" && requestUrl.pathname === "/api/session/start") {
       sendJson(res, 200, { ok: true, session: await automation.start() });
       return;
