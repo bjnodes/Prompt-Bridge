@@ -96,6 +96,20 @@ async function request(url, options = {}) {
     ...options
   });
 
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const rawText = await response.text();
+    const preview = rawText.replace(/\s+/g, " ").trim().slice(0, 120);
+
+    if (preview.includes("<!doctype") || preview.includes("<html") || preview.includes("The page could not be found")) {
+      throw new Error(
+        "현재 배포 환경에서 Prompt Bridge API가 실행되지 않고 있습니다. 이 앱은 Vercel 정적/서버리스 배포로는 동작하지 않고, Node + Playwright + 지속 세션 저장이 가능한 서버가 필요합니다."
+      );
+    }
+
+    throw new Error(`API 응답이 JSON이 아닙니다. 서버 응답: ${preview || "empty response"}`);
+  }
+
   const data = await response.json();
   if (!response.ok || !data.ok) {
     throw new Error(data.error || "요청 처리에 실패했습니다.");
