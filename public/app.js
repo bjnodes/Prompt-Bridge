@@ -47,6 +47,7 @@ const dom = {
 };
 
 const VIEW_KEY = "prompt-bridge-view-state";
+const API_BASE_KEY = "prompt-bridge-api-base";
 const MULTI_CUT_SUPPORTED_MODELS = new Set(["kling-3.0", "seedance-2.0"]);
 const EMPTY_CUT_SUBTITLE = "컷 제목이나 요약을 입력하면 이 컷의 방향이 여기에 표시됩니다.";
 
@@ -67,6 +68,30 @@ let state = {
 let saveTimer = null;
 let pendingCutPatch = {};
 let pendingCutId = "";
+
+function normalizeApiBase(value) {
+  return String(value || "").trim().replace(/\/+$/, "");
+}
+
+function getConfiguredApiBase() {
+  const queryBase = normalizeApiBase(new URLSearchParams(window.location.search).get("apiBase"));
+  if (queryBase) {
+    localStorage.setItem(API_BASE_KEY, queryBase);
+    return queryBase;
+  }
+
+  const runtimeBase = normalizeApiBase(window.PROMPT_BRIDGE_CONFIG?.apiBaseUrl);
+  if (runtimeBase) {
+    return runtimeBase;
+  }
+
+  return normalizeApiBase(localStorage.getItem(API_BASE_KEY));
+}
+
+function buildApiUrl(url) {
+  const apiBase = getConfiguredApiBase();
+  return apiBase ? `${apiBase}${url}` : url;
+}
 
 function loadViewState() {
   try {
@@ -91,7 +116,8 @@ function saveViewState() {
 }
 
 async function request(url, options = {}) {
-  const response = await fetch(url, {
+  const response = await fetch(buildApiUrl(url), {
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     ...options
   });
@@ -951,6 +977,34 @@ dom.promptInput.addEventListener("blur", () => {
     alert(error.message);
   });
 });
+
+async function request(url, options = {}) {
+  const response = await fetch(buildApiUrl(url), {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    ...options
+  });
+
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    const rawText = await response.text();
+    const preview = rawText.replace(/\s+/g, " ").trim().slice(0, 120);
+
+    if (preview.includes("<!doctype") || preview.includes("<html") || preview.includes("The page could not be found")) {
+      throw new Error(
+        "현재 이 주소에서는 Prompt Bridge API가 실행되고 있지 않습니다. Vercel에 프론트만 올린 경우라면 별도 백엔드 주소가 필요합니다. ?apiBase=https://your-backend.example.com 형태로 접속하거나 runtime-config.js에 apiBaseUrl을 넣어 주세요."
+      );
+    }
+
+    throw new Error(`API 응답이 JSON이 아닙니다. 서버 응답: ${preview || "empty response"}`);
+  }
+
+  const data = await response.json();
+  if (!response.ok || !data.ok) {
+    throw new Error(data.error || "요청 처리에 실패했습니다.");
+  }
+  return data;
+}
 
 bootstrap().catch((error) => {
   alert(error.message);

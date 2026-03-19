@@ -24,6 +24,18 @@ It needs:
 
 For deployment, use a server or container host such as a VPS, Docker host, Render, Railway, Fly.io, or another platform that supports long-running Node apps and browser automation.
 
+## ChatGPT account model
+
+The current backend architecture uses a server-side Playwright browser session.
+
+That means:
+
+- the browser session is created on the server
+- the current implementation is **not** a true "each end user logs into their own ChatGPT account in their own browser" web architecture
+- if you want true per-user ChatGPT accounts, this needs a different product shape such as a browser extension, desktop app, or a remote streamed browser system
+
+ChatGPT Free accounts can still use ChatGPT on the web, but free plans have lower rate limits than paid plans.
+
 ## Recommended web deployment: Railway
 
 This repository is prepared for Railway deployment.
@@ -44,6 +56,26 @@ This repository is prepared for Railway deployment.
 - Port: use Railway's injected `PORT`
 
 Without a persistent volume, the ChatGPT session and cut data may be lost after restarts or redeploys.
+
+## Vercel usage
+
+Vercel can host the frontend shell, but not the full backend runtime for this app.
+
+This repo now supports a split setup:
+
+- frontend on Vercel
+- backend on Railway or another server
+
+To point the Vercel frontend at a backend:
+
+1. Edit `public/runtime-config.js` and set `apiBaseUrl`
+2. or open the site with `?apiBase=https://your-backend.example.com`
+
+Example:
+
+```text
+https://your-vercel-site.vercel.app/?apiBase=https://your-railway-backend.up.railway.app
+```
 
 ## Local run
 
