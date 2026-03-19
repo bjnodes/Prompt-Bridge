@@ -1,0 +1,17 @@
+{
+  "name": "prompt-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ChatGPT-web-backed prompt generator with Playwright session automation",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "check": "node --check server.js && node --check lib/chatgpt-automation.js && node --check public/app.js",
+    "install:browsers": "playwright install chromium"
+  },
+  "dependencies": {
+    "playwright": "^1.53.0"
+  }
+}

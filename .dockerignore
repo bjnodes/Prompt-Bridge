@@ -1,0 +1,9 @@
+node_modules
+.git
+.gitignore
+.playwright-browsers
+runtime*.log
+data/chatgpt-session
+data/chatgpt-session-*
+data/uploads
+data/cuts

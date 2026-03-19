@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Bridge</title>
+  <link rel="icon" type="image/svg+xml" href="/logo-mark.svg" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="brand-wrap">
+          <div class="brand-badge">
+            <img src="/logo-mark.svg" alt="Prompt Bridge 로고" class="brand-mark" />
+          </div>
+          <div class="brand-copy">
+            <strong>Prompt Bridge</strong>
+            <span>컷별 이미지·영상 프롬프트 생성기</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <div class="topbar-session">
+          <strong class="session-inline-title">ChatGPT 연결</strong>
+          <div class="session-pill-row topbar-session-pills">
+            <span class="session-pill" id="sessionBrowserStatus">브라우저 닫힘</span>
+            <span class="session-pill" id="sessionLoginStatus">로그인 필요</span>
+          </div>
+          <p class="session-message topbar-session-message" id="sessionMessage">
+            상단 버튼으로 ChatGPT 세션을 시작한 뒤 로그인해 주세요.
+          </p>
+        </div>
+        <button class="header-action session-start-inline" id="startSessionButton" type="button">ChatGPT 세션 시작</button>
+        <button class="header-action" id="refreshStatusButton" type="button">상태 새로고침</button>
+        <button class="header-action" id="cutListButton" type="button">컷 리스트</button>
+        <button class="header-action primary-header-action" id="newCutButton" type="button">+ 새 컷</button>
+      </div>
+    </header>
+
+    <main class="workspace-layout">
+      <aside class="control-shell">
+        <section class="side-card preview-card">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Selected Cut</p>
+              <h2 id="selectedCutTitle">컷을 선택해 주세요</h2>
+            </div>
+          </div>
+
+          <div class="focus-preview" id="selectedCutThumbnail">
+            <div class="preview-toolbar">
+              <button class="preview-upload" id="selectedCutUploadButton" type="button">이미지 +</button>
+              <input id="selectedCutThumbnailInput" type="file" accept="image/*" class="hidden" />
+            </div>
+            <div class="focus-overlay">
+              <p class="focus-label">CUT PREVIEW</p>
+              <p id="selectedCutSubtitle">선택한 컷의 요약이 여기에 표시됩니다.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="side-card mode-card">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Generator</p>
+              <h2>모드와 모델</h2>
+            </div>
+          </div>
+
+          <div class="mode-tabs">
+            <button class="mode-tab active" type="button" data-mode="image">Image</button>
+            <button class="mode-tab" type="button" data-mode="video">Video</button>
+          </div>
+
+          <div class="model-list" id="modelList"></div>
+
+          <div class="generator-subgrid">
+            <div class="video-settings-panel hidden" id="videoSettingsPanel">
+              <div class="panel-head">
+                <div class="panel-head-copy">
+                  <p class="eyebrow">Video Length</p>
+                  <h3>영상 길이</h3>
+                </div>
+                <span class="panel-head-spacer" aria-hidden="true"></span>
+              </div>
+
+              <div class="panel-field-block">
+                <div class="compact-input-row">
+                  <input id="totalDurationInput" type="number" min="1" max="60" step="1" value="5" />
+                  <span class="compact-input-suffix">초</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="multi-cut-panel hidden" id="multiCutPanel">
+              <div class="panel-head multi-cut-topline">
+                <div class="panel-head-copy">
+                  <p class="eyebrow">Multi Cut</p>
+                  <h3>컷 분할</h3>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="multiCutToggle" />
+                  <span class="switch-slider"></span>
+                </label>
+              </div>
+
+              <div class="panel-field-block multi-cut-fields hidden" id="multiCutFields">
+                <div class="compact-input-row">
+                  <input id="multiCutCountInput" type="number" min="2" max="8" value="4" />
+                  <span class="compact-input-suffix">컷 수</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="side-card shot-editor">
+          <div class="section-header">
+            <div>
+              <p class="eyebrow">Prompt Input</p>
+              <h2>컷 브리프</h2>
+            </div>
+          </div>
+
+          <label for="cutSummaryInput">컷 제목</label>
+          <input id="cutSummaryInput" type="text" placeholder="예: Neon Alley Intro" />
+
+          <label for="cutNotesInput">공통 프롬프트</label>
+          <textarea id="cutNotesInput" rows="5" placeholder="여러 샷이나 생성 결과에 공통으로 반영할 스타일, 분위기, 카메라 톤을 적어 주세요."></textarea>
+
+          <div class="start-frame-block">
+            <div class="section-header compact-section-header">
+              <label class="inline-field-label" for="startFrameInput">스타트 프레임</label>
+              <div class="start-frame-actions">
+                <button class="ghost-button compact-button button-with-icon" id="startFrameUploadButton" type="button">
+                  <span class="attach-image-icon" aria-hidden="true"></span>
+                  <span>이미지 첨부</span>
+                </button>
+                <button class="ghost-button compact-button hidden" id="startFrameClearButton" type="button">제거</button>
+              </div>
+            </div>
+            <input id="startFrameInput" type="file" accept="image/*" class="hidden" />
+            <div class="start-frame-inline hidden" id="startFramePreviewWrap">
+              <div class="start-frame-thumb" id="startFramePreview"></div>
+              <div class="start-frame-copy">
+                <strong id="startFrameStatus">스타트 프레임 첨부됨</strong>
+                <p id="startFrameHint">이미지 구도와 피사체 정보를 기반으로 프롬프트를 생성합니다.</p>
+              </div>
+            </div>
+          </div>
+
+          <label for="promptInput">한글 설명</label>
+          <textarea id="promptInput" rows="14" placeholder="예: 비 오는 밤 골목에서 검은 코트를 입은 여성이 천천히 걸어온다. 카메라는 낮은 시점에서 따라가고, 네온 사인이 물웅덩이에 반사되며 영화적인 분위기를 만든다."></textarea>
+        </section>
+
+      </aside>
+
+      <section class="content-shell">
+        <section class="lead-panel">
+          <div class="lead-header">
+            <div>
+              <p class="eyebrow">Output</p>
+              <h2>최적화된 영문 프롬프트</h2>
+            </div>
+          </div>
+
+          <div class="prompt-output-card" id="promptOutputCard">
+            <article class="lead-card result-column-card main-prompt-card">
+              <div class="section-header main-prompt-header">
+                <label for="englishPromptOutput">Main Prompt</label>
+                <button class="ghost-button compact-button" id="copyPromptButton" type="button">복사</button>
+              </div>
+              <textarea id="englishPromptOutput" rows="10" readonly placeholder="생성된 영문 프롬프트가 여기에 표시됩니다."></textarea>
+
+              <div class="notes-summary hidden" id="notesSummary"></div>
+            </article>
+
+            <article class="lead-card result-column-card segments-panel-card">
+              <div class="section-header main-prompt-header">
+                <label>Multi Cut</label>
+              </div>
+              <div class="segments-output-list" id="segmentsOutputList"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="history-stage">
+          <div class="section-header history-header">
+            <div>
+              <p class="eyebrow">History</p>
+              <h2>프롬프트 히스토리</h2>
+            </div>
+          </div>
+          <div class="history-grid" id="historyList"></div>
+        </section>
+      </section>
+    </main>
+
+    <div class="generate-dock">
+      <button class="generate-button" id="generateButton" type="button">Generate Prompt</button>
+    </div>
+  </div>
+
+  <dialog id="cutDialog">
+    <form method="dialog" id="cutForm" class="dialog-form">
+      <div class="section-header">
+        <div>
+          <p class="eyebrow">New Cut</p>
+          <h2>새 컷 생성</h2>
+        </div>
+        <button class="ghost-button compact-button" type="button" id="closeDialogButton">닫기</button>
+      </div>
+
+      <label for="newCutNameInput">컷 제목</label>
+      <input id="newCutNameInput" type="text" required placeholder="예: Cut 03 - Rooftop Reveal" />
+
+      <div class="dialog-actions">
+        <button class="ghost-button" type="button" id="cancelDialogButton">취소</button>
+        <button class="primary-action dialog-submit" type="submit">생성</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="cutPickerDialog">
+    <div class="dialog-form cut-picker-dialog">
+      <div class="section-header">
+        <div>
+          <p class="eyebrow">Cuts</p>
+          <h2>컷 리스트</h2>
+        </div>
+        <button class="ghost-button compact-button" type="button" id="closeCutPickerButton">닫기</button>
+      </div>
+
+      <div class="cut-picker-grid" id="cutPickerList"></div>
+    </div>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>
