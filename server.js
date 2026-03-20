@@ -285,14 +285,24 @@ function buildAutomationPrompt({ cut, userInput, mode, model, multiCutEnabled, m
 }
 
 function parseJsonFromText(text) {
-  const fencedMatch = text.match(/```json\s*([\s\S]*?)```/i);
+  const raw = String(text || "").trim();
+  const fencedMatch = raw.match(/```json\s*([\s\S]*?)```/i);
   if (fencedMatch) {
     return JSON.parse(fencedMatch[1]);
   }
 
-  const objectMatch = text.match(/\{[\s\S]*\}/);
+  const objectMatch = raw.match(/\{[\s\S]*\}/);
   if (objectMatch) {
     return JSON.parse(objectMatch[0]);
+  }
+
+  const titleIndex = raw.indexOf('"title"');
+  if (titleIndex >= 0) {
+    const start = raw.lastIndexOf("{", titleIndex);
+    const end = raw.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      return JSON.parse(raw.slice(start, end + 1));
+    }
   }
 
   throw new Error("No JSON object found in ChatGPT response");
