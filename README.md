@@ -119,3 +119,52 @@ Mounting `/app/data` is recommended so your ChatGPT session and cut data are not
 - The app relies on ChatGPT web UI structure, so selector changes on ChatGPT may require maintenance.
 - Login is done in the Playwright-opened browser session, not by collecting ChatGPT email/password inside this app.
 - Runtime cut data, uploads, and session files are stored under `data/`.
+
+## Oracle VPS remote browser setup
+
+If you want to see and control the server-side ChatGPT browser remotely, run a lightweight virtual desktop on the server and open it through noVNC.
+
+Install the packages:
+
+```bash
+sudo apt update
+sudo apt install -y xvfb x11vnc fluxbox novnc websockify
+```
+
+Install Chromium into the project-local Playwright browser folder:
+
+```bash
+cd ~/Prompt-Bridge
+PLAYWRIGHT_BROWSERS_PATH=/home/ubuntu/Prompt-Bridge/playwright-browsers npx playwright install chromium
+```
+
+Start the remote desktop stack:
+
+```bash
+cd ~/Prompt-Bridge
+chmod +x scripts/start-remote-desktop.sh scripts/start-app.sh
+./scripts/start-remote-desktop.sh
+```
+
+Then start the app with the virtual display:
+
+```bash
+cd ~/Prompt-Bridge
+pm2 delete prompt-bridge || true
+pm2 start ./scripts/start-app.sh --name prompt-bridge
+pm2 save
+```
+
+Open these from your browser:
+
+- App: `http://YOUR_SERVER_IP`
+- Remote browser desktop: `http://YOUR_SERVER_IP:6080/vnc.html`
+
+Recommended Oracle ingress rules for this mode:
+
+- `22` for SSH
+- `80` for the app
+- `443` for HTTPS later
+- `6080` for noVNC
+
+If you keep the Linux firewall rules from the Oracle image, also allow port `6080` with `iptables`.
